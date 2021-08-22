@@ -71,7 +71,7 @@ TaskHandle_t Core2;                 //SYSTEM PARAMETER - Used for the ESP32 dual
 char 
 auth[] = "nW4qPYZTfwGk6SjhOOZuwKFSScLSmYXO",  //   USER PARAMETER - Input Blynk Authentication Token (From email after registration)
 ssid[] = "Husavik",                           //   USER PARAMETER - Enter Your WiFi SSID
-pass[] = "Joey+Lena=2293";                    //   USER PARAMETER - Enter Your WiFi Password
+pass[] = "password";                    //   USER PARAMETER - Enter Your WiFi Password
 //========== MPPT VARIABLE PARAMETERS ==============================================================
 bool                                 //========== BOOLEAN (1 = Enable, 0 - Disable) ==========   
 MPPT_Mode             = 1,           //   USER PARAMETER - Enable MPPT algorithm, when disabled charger uses CC-CV mode 
