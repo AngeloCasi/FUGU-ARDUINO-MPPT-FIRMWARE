@@ -42,17 +42,22 @@ void Read_Sensors(){
   }
   voltageInput  = (VSI/avgCountVS)*39.9000; 
   voltageOutput = (VSO/avgCountVS)*24.5000; 
+
   
   //CURRENT SENSOR - Instantenous Averaging   
   for(int i = 0; i<avgCountCS; i++){
     CSI = CSI + ads.computeVolts(ads.readADC_SingleEnded(2));
   }
-  
   CSI_converted = (CSI/avgCountCS)*1.3300;
   currentInput  = ((CSI_converted-currentMidPoint)*-1)/currentSensV;  
   if(currentInput<0){currentInput=0.0000;}
   if(voltageOutput<=0){currentOutput = 0.0000;}
   else{currentOutput = (voltageInput*currentInput)/voltageOutput;}
+
+  //POWER SOURCE DETECTION
+  if(voltageInput<=3 && voltageOutput<=3){inputSource=0;}  //System is only powered by USB port
+  else if(voltageInput>voltageOutput)    {inputSource=1;}  //System is running on solar as power source
+  else if(voltageInput<voltageOutput)    {inputSource=2;}  //System is running on batteries as power source
   
   //////// AUTOMATIC CURRENT SENSOR CALIBRATION ////////
   if(buckEnable==0 && FLV==0 && OOV == 0){                
@@ -66,8 +71,7 @@ void Read_Sensors(){
 
   //STATE OF CHARGE - Battery Percentage
   batteryPercent  = ((voltageOutput-voltageBatteryMin)/(voltageBatteryMax-voltageBatteryMin))*101;
-  if(batteryPercent<0){batteryPercent=0;}
-  else if(batteryPercent>100){batteryPercent=100;}
+  batteryPercent  = constrain(batteryPercent,0,100);
 
   //TIME DEPENDENT SENSOR DATA COMPUTATION
   currentRoutineMillis = millis();
