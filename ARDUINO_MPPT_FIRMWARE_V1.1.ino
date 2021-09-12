@@ -23,7 +23,7 @@
  *  - LCD Menu Interface (with settings & 4 display layouts)
  *  - Flash Memory (non-volatile settings save function)
  *  - Settable PWM Resolution (8bit-16bit)
- *  - Settable PWM Resolution (1.2kHz - 312kHz)
+ *  - Settable PWM Switching Frequency (1.2kHz - 312kHz)
  *  -----------------------------------------------------------------------------------------------------------
  *  PROGRAM INSTRUCTIONS:
  *  1.) Watch YouTube video tutorial first before using
@@ -41,7 +41,8 @@
  *  -----------------------------------------------------------------------------------------------------------
  *  GOOGLE DRIVE PROJECT LINK: coming soon
  *  INSTRUCTABLE TUTORIAL LINK: coming soon
- *  YOUTUBE TUTORIAL LINK: coming Soon
+ *  YOUTUBE TUTORIAL LINK: www.youtube.com/watch?v=ShXNJM6uHLM
+ *  GITHUB UPDATED FUGU FIRMWARE LINK: github.com/AngeloCasi/FUGU-ARDUINO-MPPT-FIRMWARE
  *  -----------------------------------------------------------------------------------------------------------
  *  ACTIVE CHIPS USED IN FIRMWARE:
  *  - ESP32 WROOM32
@@ -81,8 +82,9 @@ firmwareContactR2 = "TechBuilder     ";
 #include <LiquidCrystal_I2C.h>      //SYSTEM PARAMETER  - ESP32 LCD Compatible Library (By: Robojax)
 #include <Adafruit_ADS1X15.h>       //SYSTEM PARAMETER  - ADS1115/ADS1015 ADC Library (By: Adafruit)
 LiquidCrystal_I2C lcd(0x27,16,2);   //SYSTEM PARAMETER  - Configure LCD RowCol Size and I2C Address
-Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1115/ADS1015 ADC Library (By: Adafruit)
-TaskHandle_t Core2;                 //SYSTEM PARAMETER - Used for the ESP32 dual core operation
+TaskHandle_t Core2;                 //SYSTEM PARAMETER  - Used for the ESP32 dual core operation
+Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (By: Adafruit) Kindly delete this line if you are using ADS1115
+//Adafruit_ADS1115 ads;             //SYSTEM PARAMETER  - ADS1115 ADC Library (By: Adafruit) Kindly uncomment this if you are using ADS1115
 
 //====================================== USER PARAMETERS ===========================================//
 // The parameters below are the default parameters used when the MPPT charger settings have not     //
@@ -117,39 +119,40 @@ pass[] = "InputWiFiPassword";               //   USER PARAMETER - Enter Your WiF
 // would allow you to override or unlock features for advanced users (settings not on the LCD menu)//
 //=================================================================================================//
 bool                                  
-MPPT_Mode              = 1,           //   USER PARAMETER - Enable MPPT algorithm, when disabled charger uses CC-CV algorithm 
-output_Mode            = 1,           //   USER PARAMETER - 0 = PSU MODE, 1 = Charger Mode  
-disableFlashAutoLoad   = 0,           //   USER PARAMETER - Forces the MPPT to not use flash saved settings, enabling this "1" defaults to programmed firmware settings.
-enablePPWM             = 1,           //   USER PARAMETER - Enables Predictive PWM, this accelerates regulation speed (only applicable for battery charging application)
-enableWiFi             = 1,           //   USER PARAMETER - Enable WiFi Connection
-enableFan              = 1,           //   USER PARAMETER - Enable Cooling Fan
-enableBluetooth        = 1,           //   USER PARAMETER - Enable Bluetooth Connection
-enableLCD              = 1,           //   USER PARAMETER - Enable LCD display
-enableLCDBacklight     = 1,           //   USER PARAMETER - Enable LCD display's backlight
-overrideFan            = 0,           //   USER PARAMETER - Fan always on
-enableDynamicCooling   = 0;           //   USER PARAMETER - Enable for PWM cooling control 
+MPPT_Mode               = 1,           //   USER PARAMETER - Enable MPPT algorithm, when disabled charger uses CC-CV algorithm 
+output_Mode             = 1,           //   USER PARAMETER - 0 = PSU MODE, 1 = Charger Mode  
+disableFlashAutoLoad    = 0,           //   USER PARAMETER - Forces the MPPT to not use flash saved settings, enabling this "1" defaults to programmed firmware settings.
+enablePPWM              = 1,           //   USER PARAMETER - Enables Predictive PWM, this accelerates regulation speed (only applicable for battery charging application)
+enableWiFi              = 1,           //   USER PARAMETER - Enable WiFi Connection
+enableFan               = 1,           //   USER PARAMETER - Enable Cooling Fan
+enableBluetooth         = 1,           //   USER PARAMETER - Enable Bluetooth Connection
+enableLCD               = 1,           //   USER PARAMETER - Enable LCD display
+enableLCDBacklight      = 1,           //   USER PARAMETER - Enable LCD display's backlight
+overrideFan             = 0,           //   USER PARAMETER - Fan always on
+enableDynamicCooling    = 0;           //   USER PARAMETER - Enable for PWM cooling control 
 int
-serialTelemMode        = 1,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
-pwmResolution          = 11,          //  USER PARAMETER - PWM Bit Resolution 
-pwmFrequency           = 39000,       //  USER PARAMETER - PWM Switching Frequency - Hz (For Buck)
-temperatureFan         = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
-temperatureMax         = 90,          //  USER PARAMETER - Overtemperature, System Shudown When Exceeded (deg C)
-telemCounterReset      = 0,           //  USER PARAMETER - Reset Telem Data Every (0 = Never, 1 = Day, 2 = Week, 3 = Month, 4 = Year) 
-errorTimeLimit         = 1000,        //  USER PARAMETER - Time interval for reseting error counter (milliseconds)  
-errorCountLimit        = 5,           //  USER PARAMETER - Maximum number of errors  
-millisRoutineInterval  = 250,         //  USER PARAMETER - Time Interval Refresh Rate For Routine Functions (ms)
-millisSerialInterval   = 1,           //  USER PARAMETER - Time Interval Refresh Rate For USB Serial Datafeed (ms)
-millisLCDInterval      = 1000,        //  USER PARAMETER - Time Interval Refresh Rate For LCD Display (ms)
-millisWiFiInterval     = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
-millisLCDBackLInterval = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
-backlightSleepMode     = 0,           //  USER PARAMETER - 0 = Never, 1 = 10secs, 2 = 5mins, 3 = 1hr, 4 = 6 hrs, 5 = 12hrs, 6 = 1 day, 7 = 3 days, 8 = 1wk, 9 = 1month
-baudRate               = 500000;      //  USER PARAMETER - USB Serial Baud Rate (bps)
+serialTelemMode         = 1,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
+pwmResolution           = 11,          //  USER PARAMETER - PWM Bit Resolution 
+pwmFrequency            = 39000,       //  USER PARAMETER - PWM Switching Frequency - Hz (For Buck)
+temperatureFan          = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
+temperatureMax          = 90,          //  USER PARAMETER - Overtemperature, System Shudown When Exceeded (deg C)
+telemCounterReset       = 0,           //  USER PARAMETER - Reset Telem Data Every (0 = Never, 1 = Day, 2 = Week, 3 = Month, 4 = Year) 
+errorTimeLimit          = 1000,        //  USER PARAMETER - Time interval for reseting error counter (milliseconds)  
+errorCountLimit         = 5,           //  USER PARAMETER - Maximum number of errors  
+millisRoutineInterval   = 250,         //  USER PARAMETER - Time Interval Refresh Rate For Routine Functions (ms)
+millisSerialInterval    = 1,           //  USER PARAMETER - Time Interval Refresh Rate For USB Serial Datafeed (ms)
+millisLCDInterval       = 1000,        //  USER PARAMETER - Time Interval Refresh Rate For LCD Display (ms)
+millisWiFiInterval      = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
+millisLCDBackLInterval  = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
+backlightSleepMode      = 0,           //  USER PARAMETER - 0 = Never, 1 = 10secs, 2 = 5mins, 3 = 1hr, 4 = 6 hrs, 5 = 12hrs, 6 = 1 day, 7 = 3 days, 8 = 1wk, 9 = 1month
+baudRate                = 500000;      //  USER PARAMETER - USB Serial Baud Rate (bps)
 
 float 
-voltageBatteryMax     = 27.3000,     //   USER PARAMETER - Maximum Battery Charging Voltage (Output V)
-voltageBatteryMin     = 22.4000,     //   USER PARAMETER - Minimum Battery Charging Voltage (Output V)
-currentCharging       = 30.0000,     //   USER PARAMETER - Maximum Charging Current (A - Output)
-electricalPrice       = 9.5000;      //   USER PARAMETER - Input electrical price per kWh (Dollar/kWh,Euro/kWh,Peso/kWh)
+voltageBatteryMax       = 27.3000,     //   USER PARAMETER - Maximum Battery Charging Voltage (Output V)
+voltageBatteryMin       = 22.4000,     //   USER PARAMETER - Minimum Battery Charging Voltage (Output V)
+currentCharging         = 30.0000,     //   USER PARAMETER - Maximum Charging Current (A - Output)
+electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical price per kWh (Dollar/kWh,Euro/kWh,Peso/kWh)
+
 
 //================================== CALIBRATION PARAMETERS =======================================//
 // The parameters below can be tweaked for designing your own MPPT charge controllers. Only modify //
@@ -157,27 +160,29 @@ electricalPrice       = 9.5000;      //   USER PARAMETER - Input electrical pric
 // MPPT charge controllers designed by TechBuilder (Angelo S. Casimiro)                            //
 //=================================================================================================//
 bool
-ADS1015_Mode           = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
+ADS1015_Mode            = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
 int
-ADC_GainSelect         = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
-avgCountVS             = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
-avgCountCS             = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
-avgCountTS             = 500;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
+ADC_GainSelect          = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
+avgCountVS              = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
+avgCountCS              = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
+avgCountTS              = 500;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
 float
-voltageDropout        = 1.0000,      //  CALIB PARAMETER - Buck regulator's dropout voltage (DOV is present due to Max Duty Cycle Limit)
-voltageBatteryThresh  = 1.5000,      //  CALIB PARAMETER - Power cuts-off when this voltage is reached (Output V)
-currentInAbsolute     = 31.0000,     //  CALIB PARAMETER - Maximum Input Current The System Can Handle (A - Input)
-currentOutAbsolute    = 50.0000,     //  CALIB PARAMETER - Maximum Output Current The System Can Handle (A - Input)
-PPWM_margin           = 99.5000,     //  CALIB PARAMETER - Minimum Operating Duty Cycle for Predictive PWM (%)
-PWM_MaxDC             = 97.0000,     //  CALIB PARAMETER - Maximum Operating Duty Cycle (%) 90%-97% is good
-efficiencyRate        = 1.0000,      //  CALIB PARAMETER - Theroretical Buck Efficiency (% decimal)
-currentMidPoint       = 2.5250,      //  CALIB PARAMETER - Current Sensor Midpoint (V)
-currentSens           = 0.0000,      //  CALIB PARAMETER - Current Sensor Sensitivity (V/A)
-currentSensV          = 0.0660,      //  CALIB PARAMETER - Current Sensor Sensitivity (mV/A)
-vInSystemMin          = 10.0000,     //  CALIB PARAMETER - 
-vOutSystemMin         = 0.0000,      //  CALIB PARAMETER - 
-vOutSystemMax         = 50.0000,     //  CALIB PARAMETER - 
-cOutSystemMax         = 50.0000;      //  CALIB PARAMETER - 
+inVoltageDivRatio       = 40.2156,    //  CALIB PARAMETER - Input voltage divider sensor ratio (change this value to calibrate voltage sensor)
+outVoltageDivRatio      = 24.5000,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
+vOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
+cOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
+ntcResistance           = 10000.00,   //  CALIB PARAMETER - NTC temp sensor's resistance. Change to 10000.00 if you are using a 10k NTC
+voltageDropout          = 1.0000,     //  CALIB PARAMETER - Buck regulator's dropout voltage (DOV is present due to Max Duty Cycle Limit)
+voltageBatteryThresh    = 1.5000,     //  CALIB PARAMETER - Power cuts-off when this voltage is reached (Output V)
+currentInAbsolute       = 31.0000,    //  CALIB PARAMETER - Maximum Input Current The System Can Handle (A - Input)
+currentOutAbsolute      = 50.0000,    //  CALIB PARAMETER - Maximum Output Current The System Can Handle (A - Input)
+PPWM_margin             = 99.5000,    //  CALIB PARAMETER - Minimum Operating Duty Cycle for Predictive PWM (%)
+PWM_MaxDC               = 97.0000,    //  CALIB PARAMETER - Maximum Operating Duty Cycle (%) 90%-97% is good
+efficiencyRate          = 1.0000,     //  CALIB PARAMETER - Theroretical Buck Efficiency (% decimal)
+currentMidPoint         = 2.5250,     //  CALIB PARAMETER - Current Sensor Midpoint (V)
+currentSens             = 0.0000,     //  CALIB PARAMETER - Current Sensor Sensitivity (V/A)
+currentSensV            = 0.0660,     //  CALIB PARAMETER - Current Sensor Sensitivity (mV/A)
+vInSystemMin            = 10.000;     //  CALIB PARAMETER - 
 
 //===================================== SYSTEM PARAMETERS =========================================//
 // Do not change parameter values in this section. The values below are variables used by system   //
@@ -256,7 +261,8 @@ MWh                   = 0.0000,      // SYSTEM PARAMETER - Stores the accumulate
 loopTime              = 0.0000,      // SYSTEM PARAMETER -
 outputDeviation       = 0.0000,      // SYSTEM PARAMETER - Output Voltage Deviation (%)
 buckEfficiency        = 0.0000,      // SYSTEM PARAMETER - Measure buck converter power conversion efficiency (only applicable to my dual current sensor version)
-floatTemp             = 0.0000;
+floatTemp             = 0.0000,
+vOutSystemMin         = 0.0000;     //  CALIB PARAMETER - 
 unsigned long 
 currentErrorMillis    = 0,           //SYSTEM PARAMETER -
 currentButtonMillis   = 0,           //SYSTEM PARAMETER -

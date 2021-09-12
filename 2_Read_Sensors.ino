@@ -25,7 +25,7 @@ void Read_Sensors(){
   }
   else{
     TS = TS/sampleStoreTS;
-    TSlog = log(9000.00*(4095.00/TS-1.00));
+    TSlog = log(ntcResistance*(4095.00/TS-1.00));
     temperature = (1.0/(1.009249522e-03+2.378405444e-04*TSlog+2.019202697e-07*TSlog*TSlog*TSlog))-273.15;
     sampleStoreTS = 0;
     TS = 0;
@@ -40,8 +40,8 @@ void Read_Sensors(){
     VSI = VSI + ads.computeVolts(ads.readADC_SingleEnded(3));
     VSO = VSO + ads.computeVolts(ads.readADC_SingleEnded(1));
   }
-  voltageInput  = (VSI/avgCountVS)*39.9000; 
-  voltageOutput = (VSO/avgCountVS)*24.5000; 
+  voltageInput  = (VSI/avgCountVS)*inVoltageDivRatio; 
+  voltageOutput = (VSO/avgCountVS)*outVoltageDivRatio; 
 
   
   //CURRENT SENSOR - Instantenous Averaging   
