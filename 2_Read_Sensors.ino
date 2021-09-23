@@ -25,6 +25,9 @@ void Read_Sensors(){
   }
   else{
     TS = TS/sampleStoreTS;
+    //Make linear using Polynomial curve. Upgrade precission to 1%.
+    //You need one chips produced on/after the 1st week of 2018. It is individual measurement and burning of the eFuse Vref
+    TS = -0.000000000000016 * pow(TS,4) + 0.000000000118171 * pow(TS,3)- 0.000000301211691 * pow(TS,2)+ 0.001109019271794 * TS + 0.034143524634089;
     TSlog = log(ntcResistance*(4095.00/TS-1.00));
     temperature = (1.0/(1.009249522e-03+2.378405444e-04*TSlog+2.019202697e-07*TSlog*TSlog*TSlog))-273.15;
     sampleStoreTS = 0;
