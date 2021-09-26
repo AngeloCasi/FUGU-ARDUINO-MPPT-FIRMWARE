@@ -37,7 +37,6 @@ void Charging_Algorithm(){
       Serial.print("> Computing For Predictive PWM ");                               //Display serial message 
       for(int i = 0; i<40; i++){Serial.print(".");delay(30);}                        //For loop "loading... effect
       Serial.println("");                                                            //Display a line break on serial for next lines  
-      Read_Sensors();
       predictivePWM();
       PWM = PPWM; 
       lcd.clear();
