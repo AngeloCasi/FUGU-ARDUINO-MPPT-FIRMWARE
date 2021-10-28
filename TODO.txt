@@ -10,3 +10,4 @@
 - Wi-Fi/Bluetooth logger without internet (More comfort, USB port becomes optional)
 - Wi-Fi/Bluetooth control without internet (More comfort, display and buttons become optional)
 - Work with fewer components. (More cheap, better reliability, better efficiency)
+- Low power modes in ESP32 (better efficiency)
