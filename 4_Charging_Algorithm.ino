@@ -62,9 +62,9 @@ void Charging_Algorithm(){
           else if(powerInput<powerInputPrev && voltageInput<voltageInputPrev){PWM--;}  //  ↓P ↓V ; ←MPP  //D--
           else if(voltageOutput<voltageBatteryMax)                           {PWM++;}  //  MP MV ; MPP Reached - 
           powerInputPrev   = powerInput;                                               //Store Previous Recorded Power
-          voltageInputPrev = voltageInput;                                             //Store Previous Recorded Voltage  
-          PWM_Modulation();                                                            //Set PWM signal to Buck PWM GPIO           
-        }                                                                     
+          voltageInputPrev = voltageInput;                                             //Store Previous Recorded Voltage        
+        }   
+        PWM_Modulation();                                                              //Set PWM signal to Buck PWM GPIO                                                                       
       }  
     }
   }
