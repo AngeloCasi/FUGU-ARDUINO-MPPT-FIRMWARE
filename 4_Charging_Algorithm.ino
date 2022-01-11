@@ -64,7 +64,7 @@ void Charging_Algorithm(){
           powerInputPrev   = powerInput;                                               //Store Previous Recorded Power
           voltageInputPrev = voltageInput;                                             //Store Previous Recorded Voltage        
         }   
-        PWM_Modulation();                                                              //Set PWM signal to Buck PWM GPIO                                                                       
+        PWM_Modulation();                                                              //Set PWM signal to Buck PWM GPIO     
       }  
     }
   }
