@@ -97,7 +97,7 @@ Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (B
 #define LED             2           //SYSTEM PARAMETER - LED Indicator GPIO Pin
 #define FAN             16          //SYSTEM PARAMETER - Fan GPIO Pin
 #define ADC_ALERT       34          //SYSTEM PARAMETER - Fan GPIO Pin
-#define TempSensor      35          //SYSTEM PARAMETER - Temperature Sensor GPIO Pin
+#define TEMP_SENSOR_PIN 35          //SYSTEM PARAMETER - Temperature Sensor GPIO Pin
 #define buttonLeft      18          //SYSTEM PARAMETER - 
 #define buttonRight     17          //SYSTEM PARAMETER -
 #define buttonBack      19          //SYSTEM PARAMETER - 
@@ -161,17 +161,17 @@ electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical pr
 //=================================================================================================//
 bool
 ADS1015_Mode            = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
-int
+const int
 ADC_GainSelect          = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
 avgCountVS              = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
-avgCountCS              = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
-avgCountTS              = 500;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
+avgCountCS              = 4;          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
+AVERAGE_TEMPERATURE     = 128;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
 float
 inVoltageDivRatio       = 40.2156,    //  CALIB PARAMETER - Input voltage divider sensor ratio (change this value to calibrate voltage sensor)
 outVoltageDivRatio      = 24.5000,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
 vOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
 cOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
-ntcResistance           = 10000.00,   //  CALIB PARAMETER - NTC temp sensor's resistance. Change to 10000.00 if you are using a 10k NTC
+NTC_RESISTANCE          = 10000.00,   //  CALIB PARAMETER - NTC temp sensor's resistance. Change to 10000.00 if you are using a 10k NTC
 voltageDropout          = 1.0000,     //  CALIB PARAMETER - Buck regulator's dropout voltage (DOV is present due to Max Duty Cycle Limit)
 voltageBatteryThresh    = 1.5000,     //  CALIB PARAMETER - Power cuts-off when this voltage is reached (Output V)
 currentInAbsolute       = 31.0000,    //  CALIB PARAMETER - Maximum Input Current The System Can Handle (A - Input)
@@ -221,9 +221,7 @@ OOC                   = 0,           // SYSTEM PARAMETER -
 OTE                   = 0;           // SYSTEM PARAMETER - 
 int
 inputSource           = 0,           // SYSTEM PARAMETER - 0 = MPPT has no power source, 1 = MPPT is using solar as source, 2 = MPPTis using battery as power source
-avgStoreTS            = 0,           // SYSTEM PARAMETER - Temperature Sensor uses non invasive averaging, this is used an accumulator for mean averaging
 temperature           = 0,           // SYSTEM PARAMETER -
-sampleStoreTS         = 0,           // SYSTEM PARAMETER - TS AVG nth Sample
 pwmMax                = 0,           // SYSTEM PARAMETER -
 pwmMaxLimited         = 0,           // SYSTEM PARAMETER -
 PWM                   = 0,           // SYSTEM PARAMETER -
@@ -252,7 +250,6 @@ voltageInputPrev      = 0.0000,      // SYSTEM PARAMETER - Previously stored inp
 voltageOutput         = 0.0000,      // SYSTEM PARAMETER - Input voltage (battery voltage)
 currentInput          = 0.0000,      // SYSTEM PARAMETER - Output power (battery or charing voltage)
 currentOutput         = 0.0000,      // SYSTEM PARAMETER - Output current (battery or charing current in Amperes)
-TSlog                 = 0.0000,      // SYSTEM PARAMETER - Part of NTC thermistor thermal sensing code
 ADC_BitReso           = 0.0000,      // SYSTEM PARAMETER - System detects the approriate bit resolution factor for ADS1015/ADS1115 ADC
 daysRunning           = 0.0000,      // SYSTEM PARAMETER - Stores the total number of days the MPPT device has been running since last powered
 Wh                    = 0.0000,      // SYSTEM PARAMETER - Stores the accumulated energy harvested (Watt-Hours)

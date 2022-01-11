@@ -16,20 +16,35 @@ void resetVariables(){
   daysRunning    = 0; 
   timeOn         = 0; 
 }
+
+//==============================================================
+// Read temperature sensor
+// Return: temperature in °C
+//==============================================================
+float ReadTemperatureSensor()
+{
+  static float lastRawTemperature = 0;
+
+  // Temperature changes slowly. Use the IIR filter
+  int sample = analogRead(TEMP_SENSOR_PIN);
+  lastRawTemperature += (sample - lastRawTemperature) / AVERAGE_TEMPERATURE;
+
+  // Convert to voltage using Polynomial curve
+  float pow2 = lastRawTemperature * lastRawTemperature;
+  float pow3 = pow2 * lastRawTemperature;
+  float pow4 = pow3 * lastRawTemperature;
+  float result = -0.000000000000016 * pow4 + 0.000000000118171 * pow3 - 0.000000301211691 * pow2 + 0.001109019271794 * lastRawTemperature + 0.034143524634089;
+
+  // Convert to ºC
+  result = log(NTC_RESISTANCE * ((3.3 / result) - 1));
+  return (1.0 / (1.009249522e-03 + 2.378405444e-04 * result + 2.019202697e-07 * result * result * result)) - 273.15;
+}
+
 void Read_Sensors(){
 
   /////////// TEMPERATURE SENSOR /////////////
-  if(sampleStoreTS<=avgCountTS){                               //TEMPERATURE SENSOR - Lite Averaging
-    TS = TS + analogRead(TempSensor);
-    sampleStoreTS++;   
-  }
-  else{
-    TS = TS/sampleStoreTS;
-    TSlog = log(ntcResistance*(4095.00/TS-1.00));
-    temperature = (1.0/(1.009249522e-03+2.378405444e-04*TSlog+2.019202697e-07*TSlog*TSlog*TSlog))-273.15;
-    sampleStoreTS = 0;
-    TS = 0;
-  }
+  temperature = ReadTemperatureSensor();
+
   /////////// VOLTAGE & CURRENT SENSORS /////////////
   VSI = 0.0000;      //Clear Previous Input Voltage 
   VSO = 0.0000;      //Clear Previous Output Voltage  
