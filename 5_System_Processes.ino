@@ -1,15 +1,4 @@
 void System_Processes(){
-  ///////////////// FAN COOLING /////////////////
-  if(enableFan==true){
-    if(enableDynamicCooling==false){                                   //STATIC PWM COOLING MODE (2-PIN FAN - no need for hysteresis, temp data only refreshes after 'avgCountTS' or every 500 loop cycles)                       
-      if(overrideFan==true){fanStatus=true;}                           //Force on fan
-      else if(temperature>=temperatureFan){fanStatus=1;}               //Turn on fan when set fan temp reached
-      else if(temperature<temperatureFan){fanStatus=0;}                //Turn off fan when set fan temp reached
-      digitalWrite(FAN,fanStatus);                                     //Send a digital signal to the fan MOSFET
-    }
-    else{}                                                             //DYNAMIC PWM COOLING MODE (3-PIN FAN - coming soon)
-  }
-  else{digitalWrite(FAN,LOW);}                                         //Fan Disabled
   
   //////////// LOOP TIME STOPWATCH ////////////
   loopTimeStart = micros();                                            //Record Start Time
@@ -37,9 +26,9 @@ void factoryReset(){
   EEPROM.write(4,0);  //STORE: Min Battery Voltage (decimal) 
   EEPROM.write(5,30); //STORE: Charging Current (whole)
   EEPROM.write(6,0);  //STORE: Charging Current (decimal)
-  EEPROM.write(7,1);  //STORE: Fan Enable (Bool)
-  EEPROM.write(8,60); //STORE: Fan Temp (Integer)
-  EEPROM.write(9,90); //STORE: Shutdown Temp (Integer)
+  EEPROM.write(EEPROM_FANMODE,3);                //STORE: Fan mode (decimal)
+  EEPROM.write(EEPROM_FANTRIGGERTEMPERATURE,60); //STORE: Fan trigger temperature (Integer)
+  EEPROM.write(EEPROM_MAXBOARDTEMPERATURE,90);   //STORE: Shutdown Temp (Integer)
   EEPROM.write(10,1); //STORE: Enable WiFi (Boolean)
   EEPROM.write(11,1); //STORE: Enable autoload (on by default)
   EEPROM.write(13,0); //STORE: LCD backlight sleep timer (default: 0 = never)
@@ -53,9 +42,9 @@ void loadSettings(){
   voltageBatteryMax  = EEPROM.read(1)+(EEPROM.read(2)*.01);  // Load saved maximum battery voltage setting
   voltageBatteryMin  = EEPROM.read(3)+(EEPROM.read(4)*.01);  // Load saved minimum battery voltage setting
   currentCharging    = EEPROM.read(5)+(EEPROM.read(6)*.01);  // Load saved charging current setting
-  enableFan          = EEPROM.read(7);                       // Load saved fan enable settings
-  temperatureFan     = EEPROM.read(8);                       // Load saved fan temperature settings
-  temperatureMax     = EEPROM.read(9);                       // Load saved shutdown temperature settings
+  fanMode               = EEPROM.read(EEPROM_FANMODE);               // Load saved fan mode setting
+  fanTriggerTemperature = EEPROM.read(EEPROM_FANTRIGGERTEMPERATURE); // Load saved fan temperature settings
+  temperatureMax        = EEPROM.read(EEPROM_MAXBOARDTEMPERATURE);   // Load saved shutdown temperature settings
   enableWiFi         = EEPROM.read(10);                      // Load saved WiFi enable settings  
   flashMemLoad       = EEPROM.read(11);                      // Load saved flash memory autoload feature
   backlightSleepMode = EEPROM.read(13);                      // Load saved lcd backlight sleep timer
@@ -76,9 +65,9 @@ void saveSettings(){
   conv2 = conv1%100;
   EEPROM.write(5,currentCharging);
   EEPROM.write(6,conv2);
-  EEPROM.write(7,enableFan);           //STORE: Fan Enable
-  EEPROM.write(8,temperatureFan);      //STORE: Fan Temp
-  EEPROM.write(9,temperatureMax);      //STORE: Shutdown Temp
+  EEPROM.write(EEPROM_FANMODE,fanMode);                              //STORE: Fan mode
+  EEPROM.write(EEPROM_FANTRIGGERTEMPERATURE, fanTriggerTemperature); //STORE: Fan Temp
+  EEPROM.write(EEPROM_MAXBOARDTEMPERATURE, temperatureMax);          //STORE: Shutdown Temp
   EEPROM.write(10,enableWiFi);         //STORE: Enable WiFi
 //EEPROM.write(11,flashMemLoad);       //STORE: Enable autoload (must be excluded from bulk save, uncomment under discretion)
   EEPROM.write(13,backlightSleepMode); //STORE: LCD backlight sleep timer 

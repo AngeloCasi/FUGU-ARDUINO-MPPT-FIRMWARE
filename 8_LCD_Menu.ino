@@ -318,46 +318,65 @@ void LCD_Menu(){
       lcd.setCursor(0,0);lcd.print("COOLING FAN     ");
       if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
       else{lcd.setCursor(0,1);lcd.print("= ");}
-      if(enableFan==1){lcd.print("ENABLED       ");}
-      else{lcd.print("DISABLE         ");}
-
-      //SET MENU - BOOLTYPE
-      if(setMenuPage==0){boolTemp = enableFan;}
+      lcd.setCursor(2,1);
+      if(fanMode==1)     {lcd.print("ALWAYS ON     ");}
+      else if(fanMode==2){lcd.print("AUTO ON/OFF   ");}
+      else if(fanMode==3){lcd.print("DINAMIC SPEED ");}
+      else{lcd.print("ALWAYS OFF    ");}
+      
+      //SET MENU - INTMODETYPE
+      if(setMenuPage==0){intTemp = backlightSleepMode;}
       else{
-        if(digitalRead(buttonRight)==1||digitalRead(buttonLeft)==1){
-          while(digitalRead(buttonRight)==1||digitalRead(buttonLeft)==1){}
-          if(enableFan==1){enableFan=0;}else{enableFan=1;}
+        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}fanMode = intTemp;cancelledMessageLCD();setMenuPage=0;} 
+        if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}     
+        if(digitalRead(buttonRight)==1){                            //Right button press (increments setting values)
+          fanMode++;                                                //Increment by 1
+          fanMode = constrain(fanMode,0,3);                         //Limit settings values to a range
+          lcd.setCursor(2,1);
+          if(fanMode==1)     {lcd.print("ALWAYS ON     ");}
+          else if(fanMode==2){lcd.print("AUTO ON/OFF   ");}
+          else if(fanMode==3){lcd.print("DINAMIC SPEED ");}
+          else{lcd.print("ALWAYS OFF    ");}
+          while(digitalRead(buttonRight)==1){}
         }
-        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}enableFan = boolTemp;cancelledMessageLCD();setMenuPage=0;} 
-        if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}
-      } 
+        else if(digitalRead(buttonLeft)==1){                        //Left button press (decrements setting values)
+          fanMode--;                                                //Increment by 1
+          fanMode = constrain(fanMode,0,3);                         //Limit settings values to a range
+          lcd.setCursor(2,1);
+          if(fanMode==1)     {lcd.print("ALWAYS ON     ");}
+          else if(fanMode==2){lcd.print("AUTO ON/OFF   ");}
+          else if(fanMode==3){lcd.print("DINAMIC SPEED ");}
+          else{lcd.print("ALWAYS OFF    ");}
+          while(digitalRead(buttonLeft)==1){}
+        }
+      }
     }
     ///// SETTINGS MENU ITEM: FAN TRIG TEMP /////
     else if(subMenuPage==6){
       lcd.setCursor(0,0);lcd.print("FAN TRIGGER TEMP");
       if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
       else{lcd.setCursor(0,1);lcd.print("= ");}
-      lcd.setCursor(2,1);lcd.print(temperatureFan);
+      lcd.setCursor(2,1);lcd.print(fanTriggerTemperature);
       lcd.print((char)223);lcd.print("C");lcd.print("                ");  
 
       //SET MENU - INTTYPE
-      if(setMenuPage==0){intTemp = temperatureFan;}
+      if(setMenuPage==0){intTemp = fanTriggerTemperature;}
       else{
-        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}temperatureFan = intTemp;cancelledMessageLCD();setMenuPage=0;} 
+        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}fanTriggerTemperature = intTemp;cancelledMessageLCD();setMenuPage=0;} 
         if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}     
         if(digitalRead(buttonRight)==1){                                              //Right button press (increments setting values)
           while(digitalRead(buttonRight)==1){   
-            temperatureFan++;                                                       //Increment by 1
-            temperatureFan = constrain(temperatureFan,0,100);                       //Limit settings values to a range
-            lcd.setCursor(2,1);lcd.print(temperatureFan);delay(shortPressInterval); //Display settings data                               
+            fanTriggerTemperature++;                                                       //Increment by 1
+            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                       //Limit settings values to a range
+            lcd.setCursor(2,1);lcd.print(fanTriggerTemperature);delay(shortPressInterval); //Display settings data                               
             lcd.print((char)223);lcd.print("C    ");                                //Display unit
           } 
         }
         else if(digitalRead(buttonLeft)==1){                                        //Left button press (decrements setting values)
           while(digitalRead(buttonLeft)==1){ 
-            temperatureFan--;                                                       //Increment by 1
-            temperatureFan = constrain(temperatureFan,0,100);                       //Limit settings values to a range
-            lcd.setCursor(2,1);lcd.print(temperatureFan);delay(shortPressInterval); //Display settings data                               
+            fanTriggerTemperature--;                                                       //Increment by 1
+            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                       //Limit settings values to a range
+            lcd.setCursor(2,1);lcd.print(fanTriggerTemperature);delay(shortPressInterval); //Display settings data                               
             lcd.print((char)223);lcd.print("C    ");                                //Display unit
           } 
         }
