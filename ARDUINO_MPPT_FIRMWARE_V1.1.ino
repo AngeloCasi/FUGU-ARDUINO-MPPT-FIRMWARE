@@ -97,11 +97,11 @@ Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (B
 #define LED             2           //SYSTEM PARAMETER - LED Indicator GPIO Pin
 #define FAN             16          //SYSTEM PARAMETER - Fan GPIO Pin
 #define ADC_ALERT       34          //SYSTEM PARAMETER - Fan GPIO Pin
-#define TEMP_SENSOR_PIN 35          //SYSTEM PARAMETER - Temperature Sensor GPIO Pin
 #define buttonLeft      18          //SYSTEM PARAMETER - 
 #define buttonRight     17          //SYSTEM PARAMETER -
 #define buttonBack      19          //SYSTEM PARAMETER - 
 #define buttonSelect    23          //SYSTEM PARAMETER -
+const int TEMP_SENSOR_PIN = 35;     //SYSTEM PARAMETER - Temperature Sensor GPIO Pin
 
 //========================================= WiFi SSID ==============================================//
 // This MPPT firmware uses the Blynk phone app and arduino library for controls and data telemetry  //
@@ -159,14 +159,14 @@ electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical pr
 // the values below if you know what you are doing. The values below have been pre-calibrated for  //
 // MPPT charge controllers designed by TechBuilder (Angelo S. Casimiro)                            //
 //=================================================================================================//
-bool
+const bool
 ADS1015_Mode            = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
 const int
 ADC_GainSelect          = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
 avgCountVS              = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
-avgCountCS              = 4;          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
+avgCountCS              = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
 AVERAGE_TEMPERATURE     = 128;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
-float
+const float
 inVoltageDivRatio       = 40.2156,    //  CALIB PARAMETER - Input voltage divider sensor ratio (change this value to calibrate voltage sensor)
 outVoltageDivRatio      = 24.5000,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
 vOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
@@ -179,11 +179,9 @@ currentOutAbsolute      = 50.0000,    //  CALIB PARAMETER - Maximum Output Curre
 PPWM_margin             = 99.5000,    //  CALIB PARAMETER - Minimum Operating Duty Cycle for Predictive PWM (%)
 PWM_MaxDC               = 97.0000,    //  CALIB PARAMETER - Maximum Operating Duty Cycle (%) 90%-97% is good
 efficiencyRate          = 1.0000,     //  CALIB PARAMETER - Theroretical Buck Efficiency (% decimal)
-currentMidPoint         = 2.5250,     //  CALIB PARAMETER - Current Sensor Midpoint (V)
 currentSens             = 0.0000,     //  CALIB PARAMETER - Current Sensor Sensitivity (V/A)
 currentSensV            = 0.0660,     //  CALIB PARAMETER - Current Sensor Sensitivity (mV/A)
 vInSystemMin            = 10.000;     //  CALIB PARAMETER - 
-
 //===================================== SYSTEM PARAMETERS =========================================//
 // Do not change parameter values in this section. The values below are variables used by system   //
 // processes. Changing the values can damage the MPPT hardware. Kindly leave it as is! However,    //
@@ -258,8 +256,9 @@ MWh                   = 0.0000,      // SYSTEM PARAMETER - Stores the accumulate
 loopTime              = 0.0000,      // SYSTEM PARAMETER -
 outputDeviation       = 0.0000,      // SYSTEM PARAMETER - Output Voltage Deviation (%)
 buckEfficiency        = 0.0000,      // SYSTEM PARAMETER - Measure buck converter power conversion efficiency (only applicable to my dual current sensor version)
-floatTemp             = 0.0000,
-vOutSystemMin         = 0.0000;     //  CALIB PARAMETER - 
+floatTemp             = 0.0000,      // SYSTEM PARAMETER - Used for LCD menu
+vOutSystemMin         = 0.0000,      //  CALIB PARAMETER - 
+currentMidPoint       = 2.5250;      //  CALIB PARAMETER - Current Sensor Midpoint (V)
 unsigned long 
 currentErrorMillis    = 0,           //SYSTEM PARAMETER -
 currentButtonMillis   = 0,           //SYSTEM PARAMETER -
