@@ -80,9 +80,7 @@ void displayConfig4(){
   lcd.setCursor(0,0);lcd.print("TEMPERATURE STAT");
   lcd.setCursor(0,1);lcd.print(temperature);lcd.print((char)223);lcd.print("C");padding100(temperature);
   lcd.setCursor(8,1);lcd.print("FAN");
-  lcd.setCursor(12,1);
-  if(fanStatus==1){lcd.print("ON ");}
-  else{lcd.print("OFF");}
+  lcd.setCursor(12,1);lcd.print(fanSpeed);lcd.print("%");
 }
 void displayConfig5(){
   lcd.setCursor(0,0);lcd.print(" SETTINGS MENU  ");

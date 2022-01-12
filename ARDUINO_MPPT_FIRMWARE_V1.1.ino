@@ -199,7 +199,6 @@ vInSystemMin            = 10.000;     //  CALIB PARAMETER -
 //=================================================================================================//
 bool
 buckEnable            = 0,           // SYSTEM PARAMETER - Buck Enable Status
-fanStatus             = 0,           // SYSTEM PARAMETER - Fan activity status (1 = On, 0 = Off)
 bypassEnable          = 0,           // SYSTEM PARAMETER - 
 chargingPause         = 0,           // SYSTEM PARAMETER - 
 lowPowerMode          = 0,           // SYSTEM PARAMETER - 
