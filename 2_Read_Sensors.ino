@@ -42,7 +42,6 @@ void Read_Sensors(){
   }
   voltageInput  = (VSI/avgCountVS)*inVoltageDivRatio; 
   voltageOutput = (VSO/avgCountVS)*outVoltageDivRatio; 
-
   
   //CURRENT SENSOR - Instantenous Averaging   
   for(int i = 0; i<avgCountCS; i++){
