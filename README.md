@@ -30,3 +30,13 @@ all topics that can be changed are listed below
 /backlightSleepMode1    Enable LCD display's backlight
 
 so that new firmware can be downloaded not only via cable, the ability to download via OTA has been added to log in and download in the browser line, write the device address/update
+
+On line 62, you can specify your MQTT server protocol
+
+on the following lines, you specify the port and topic where the data will be downloaded and from where you will send them to the device
+
+on line 73, you enter the BLYNK server token and then the name and password to your access point.
+
+to change the address of the BLYNK server on the 7_Wireless_Telemetry tab in the line
+
+Blynk.begin(auth, ssid, pass, "192.168.2.137", 8080) you change the server address to your own.
