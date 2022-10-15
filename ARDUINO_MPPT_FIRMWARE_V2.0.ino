@@ -70,9 +70,9 @@ firmwareContactR2 = "TechBuilder     ";
 // from email after registering from the Blynk platform.                                            //
 //==================================================================================================//
 char 
-auth[] = "c33L8x1oqgx12RIQdDWjwSGBOpQjoYT1",   //   USER PARAMETER - Input Blynk Authentication Token (From email after registration)
-ssid[] = "server",                   //   USER PARAMETER - Enter Your WiFi SSID
-pass[] = "1206985407";               //   USER PARAMETER - Enter Your WiFi Password
+auth[] = "",   //   USER PARAMETER - Input Blynk Authentication Token (From email after registration)
+ssid[] = "",                   //   USER PARAMETER - Enter Your WiFi SSID
+pass[] = "";               //   USER PARAMETER - Enter Your WiFi Password
 
 //====================================== USER PARAMETERS ==========================================//
 // The parameters below are the default parameters used when the MPPT charger settings have not    //
@@ -92,7 +92,7 @@ enableLCDBacklight      = 1,           //   USER PARAMETER - Enable LCD display'
 overrideFan             = 0,           //   USER PARAMETER - Fan always on
 enableDynamicCooling    = 1;           //   USER PARAMETER - Enable for PWM cooling control 
 int
-serialTelemMode         = 1,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
+serialTelemMode         = 0,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
 pwmResolution           = 11,          //  USER PARAMETER - PWM Bit Resolution 
 pwmFrequency            = 39000,       //  USER PARAMETER - PWM Switching Frequency - Hz (For Buck)
 temperatureFan          = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
