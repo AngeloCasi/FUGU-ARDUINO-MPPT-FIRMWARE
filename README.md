@@ -40,3 +40,6 @@ on line 73, you enter the BLYNK server token and then the name and password to y
 to change the address of the BLYNK server on the 7_Wireless_Telemetry tab in the line
 
 Blynk.begin(auth, ssid, pass, "192.168.2.137", 8080) you change the server address to your own.
+
+on line 54, LOGIN AND PASSWORD FOR OTA UPDATES.by default admin admin. 
+
