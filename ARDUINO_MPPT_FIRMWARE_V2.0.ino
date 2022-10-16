@@ -1,78 +1,11 @@
-/*  PROJECT FUGU FIRMWARE V1.10  (DIY 1kW Open Source MPPT Solar Charge Controller)
- *  By: TechBuilder (Angelo Casimiro)
- *  FIRMWARE STATUS: Verified Stable Build Version
- *  (Contact me for the experimental beta versions)
- *  -----------------------------------------------------------------------------------------------------------
- *  DATE CREATED:  02/07/2021 
- *  DATE MODIFIED: 30/08/2021
- *  -----------------------------------------------------------------------------------------------------------
- *  CONTACTS:
- *  GitHub - www.github.com/AngeloCasi (New firmware releases will only be available on GitHub Link)
- *  Email - casithebuilder@gmail.com
- *  YouTube - www.youtube.com/TechBuilder
- *  Facebook - www.facebook.com/AngeloCasii
- *  -----------------------------------------------------------------------------------------------------------
- *  PROGRAM FEATURES:
- *  - MPPT Perturbed Algorithm With CC-CV
- *  - WiFi & Bluetooth BLE Blynk Phone App Telemetry
- *  - Selectable Charger/PSU Mode (can operate as a programmable buck converter)
- *  - Dual Core ESP32 Unlocked (using xTaskCreatePinnedToCore(); )
- *  - Precision ADC Tracking Auto ADS1115/ADS1015 Detection (16bit/12bit I2C ADC)
- *  - Automatic ACS712-30A Current Sensor Calibration
- *  - Equipped With Battery Disconnect & Input Disconnect Recovery Protection Protocol
- *  - LCD Menu Interface (with settings & 4 display layouts)
- *  - Flash Memory (non-volatile settings save function)
- *  - Settable PWM Resolution (8bit-16bit)
- *  - Settable PWM Switching Frequency (1.2kHz - 312kHz)
- *  -----------------------------------------------------------------------------------------------------------
- *  PROGRAM INSTRUCTIONS:
- *  1.) Watch YouTube video tutorial first before using
- *  2.) Install the required Arduino libraries for the ICs
- *  3.) Select Tools > ESP32 Dev Board Board 
- *  4.) Do not modify code unless you know what you are doing
- *  5.) The MPPT's synchronous buck converter topology is code dependent, messing with the algorithm
- *      and safety protection protocols can be extremely dangerous especially when dealing with HVDC.
- *  6.) Install Blynk Legacy to access the phone app telemetry feature
- *  7.) Input the Blynk authentication in this program token sent by Blynk to your email after registration
- *  8.) Input WiFi SSID and password in this program
- *  9.) When using WiFi only mode, change "disableFlashAutoLoad = 0" to = 1 (LCD and buttons not installed)
- *      this prevents the MPPT unit to load the Flash Memory saved settings and will load the Arduino variable
- *      declarations set below instead
- *  -----------------------------------------------------------------------------------------------------------
- *  GOOGLE DRIVE PROJECT LINK: coming soon
- *  INSTRUCTABLE TUTORIAL LINK: coming soon
- *  YOUTUBE TUTORIAL LINK: www.youtube.com/watch?v=ShXNJM6uHLM
- *  GITHUB UPDATED FUGU FIRMWARE LINK: github.com/AngeloCasi/FUGU-ARDUINO-MPPT-FIRMWARE
- *  -----------------------------------------------------------------------------------------------------------
- *  ACTIVE CHIPS USED IN FIRMWARE:
- *  - ESP32 WROOM32
- *  - ADS1115/ADS1015 I2C ADC
- *  - ACS712-30A Current Sensor IC
- *  - IR2104 MOSFET Driver
- *  - CH340C USB TO UART IC
- *  - 16X2 I2C Character LCD
-
- *  OTHER CHIPS USED IN PROJECT:
- *  - XL7005A 80V 0.4A Buck Regulator (2x)
- *  - AMS1115-3.3 LDO Linear Regulator 
- *  - AMS1115-5.0 LDO Linear Regulator  
- *  - CSD19505 N-ch MOSFETS (3x)
- *  - B1212 DC-DC Isolated Converter
- *  - SS310 Diodes
- */
-//================================ MPPT FIRMWARE LCD MENU INFO =====================================//
-// The lines below are for the Firmware Version info displayed on the MPPT's LCD Menu Interface     //
-//==================================================================================================//
-String 
-firmwareInfo      = "V1.10   ",
-firmwareDate      = "30/08/21",
-firmwareContactR1 = "www.youtube.com/",  
-firmwareContactR2 = "TechBuilder     ";        
-           
 //====================== ARDUINO LIBRARIES (ESP32 Compatible Libraries) ============================//
 // You will have to download and install the following libraries below in order to program the MPPT //
 // unit. Visit TechBuilder's YouTube channel for the "MPPT" tutorial.                               //
 //============================================================================================= ====//
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <Update.h>
+#include <PubSubClient.h>
 #include <EEPROM.h>                 //SYSTEM PARAMETER  - EEPROM Library (By: Arduino)
 #include <Wire.h>                   //SYSTEM PARAMETER  - WIRE Library (By: Arduino)
 #include <SPI.h>                    //SYSTEM PARAMETER  - SPI Library (By: Arduino)
@@ -83,9 +16,102 @@ firmwareContactR2 = "TechBuilder     ";
 #include <Adafruit_ADS1X15.h>       //SYSTEM PARAMETER  - ADS1115/ADS1015 ADC Library (By: Adafruit)
 LiquidCrystal_I2C lcd(0x27,16,2);   //SYSTEM PARAMETER  - Configure LCD RowCol Size and I2C Address
 TaskHandle_t Core2;                 //SYSTEM PARAMETER  - Used for the ESP32 dual core operation
-Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (By: Adafruit) Kindly delete this line if you are using ADS1115
-//Adafruit_ADS1115 ads;             //SYSTEM PARAMETER  - ADS1115 ADC Library (By: Adafruit) Kindly uncomment this if you are using ADS1115
+//Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (By: Adafruit) Kindly delete this line if you are using ADS1115
+Adafruit_ADS1115 ads;             //SYSTEM PARAMETER  - ADS1115 ADC Library (By: Adafruit) Kindly uncomment this if you are using ADS1115
 
+int a = 1;
+int value;
+int value1;
+
+long lastMsg = 0;
+char msg[50];
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+void callback(char* topic, byte* payload, unsigned int length);
+
+WebServer server(80);
+//const char* serverIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
+
+/* Style */
+String style =
+"<style>#file-input,input{width:100%;height:44px;border-radius:4px;margin:10px auto;font-size:15px}"
+"input{background:#f1f1f1;border:0;padding:0 15px}body{background:#3498db;font-family:sans-serif;font-size:14px;color:#777}"
+"#file-input{padding:0;border:1px solid #ddd;line-height:44px;text-align:left;display:block;cursor:pointer}"
+"#bar,#prgbar{background-color:#f1f1f1;border-radius:10px}#bar{background-color:#3498db;width:0%;height:10px}"
+"form{background:#fff;max-width:258px;margin:75px auto;padding:30px;border-radius:5px;text-align:center}"
+".btn{background:#3498db;color:#fff;cursor:pointer}</style>";
+
+/* Login page */
+String loginIndex = 
+"<form name=loginForm>"
+"<h1>ESP32 Login</h1>"
+"<input name=userid placeholder='User ID'> "
+"<input name=pwd placeholder=Password type=Password> "
+"<input type=submit onclick=check(this.form) class=btn value=Login></form>"
+"<script>"
+"function check(form) {"
+"if(form.userid.value=='admin' && form.pwd.value=='admin')"
+"{window.open('/serverIndex')}"
+"else"
+"{alert('Error Password or Username')}"
+"}"
+"</script>" + style;
+ 
+/* Server Index Page */
+String serverIndex = 
+"<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
+"<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
+"<input type='file' name='update' id='file' onchange='sub(this)' style=display:none>"
+"<label id='file-input' for='file'>   Choose file...</label>"
+"<input type='submit' class=btn value='Update'>"
+"<br><br>"
+"<div id='prg'></div>"
+"<br><div id='prgbar'><div id='bar'></div></div><br></form>"
+"<script>"
+"function sub(obj){"
+"var fileName = obj.value.split('\\\\');"
+"document.getElementById('file-input').innerHTML = '   '+ fileName[fileName.length-1];"
+"};"
+"$('form').submit(function(e){"
+"e.preventDefault();"
+"var form = $('#upload_form')[0];"
+"var data = new FormData(form);"
+"$.ajax({"
+"url: '/update',"
+"type: 'POST',"
+"data: data,"
+"contentType: false,"
+"processData:false,"
+"xhr: function() {"
+"var xhr = new window.XMLHttpRequest();"
+"xhr.upload.addEventListener('progress', function(evt) {"
+"if (evt.lengthComputable) {"
+"var per = evt.loaded / evt.total;"
+"$('#prg').html('progress: ' + Math.round(per*100) + '%');"
+"$('#bar').css('width',Math.round(per*100) + '%');"
+"}"
+"}, false);"
+"return xhr;"
+"},"
+"success:function(d, s) {"
+"console.log('success!') "
+"},"
+"error: function (a, b, c) {"
+"}"
+"});"
+"});"
+"</script>" + style;
+
+//================================ MPPT FIRMWARE LCD MENU INFO =====================================//
+// The lines below are for the Firmware Version info displayed on the MPPT's LCD Menu Interface     //
+//==================================================================================================//
+String 
+firmwareInfo      = "V2.0   ",
+firmwareDate      = "14/10/22",
+firmwareContactR1 = "www.youtube.com/",  
+firmwareContactR2 = "TechBuilder     ";        
+           
 //====================================== USER PARAMETERS ===========================================//
 // The parameters below are the default parameters used when the MPPT charger settings have not     //
 // been set or saved through the LCD menu interface or mobile phone WiFi app. Some parameters here  //
@@ -103,15 +129,20 @@ Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (B
 #define buttonBack      19          //SYSTEM PARAMETER - 
 #define buttonSelect    23          //SYSTEM PARAMETER -
 
+#define MY_MQTT_SERVER_HOST "192.168.2.6"
+#define MY_MQTT_SERVER_PORT 1883
+//#define MY_MQTT_USER ""
+//#define MY_MQTT_PASSWORD ""
+#define MY_MQTT_TOPIC "sensors/mppt"
 //========================================= WiFi SSID ==============================================//
 // This MPPT firmware uses the Blynk phone app and arduino library for controls and data telemetry  //
 // Fill in your WiFi SSID and password. You will also have to get your own authentication token     //
 // from email after registering from the Blynk platform.                                            //
 //==================================================================================================//
 char 
-auth[] = "InputBlynkAuthenticationToken",   //   USER PARAMETER - Input Blynk Authentication Token (From email after registration)
-ssid[] = "InputWiFiSSID",                   //   USER PARAMETER - Enter Your WiFi SSID
-pass[] = "InputWiFiPassword";               //   USER PARAMETER - Enter Your WiFi Password
+auth[] = "",   //   USER PARAMETER - Input Blynk Authentication Token (From email after registration)
+ssid[] = "",                   //   USER PARAMETER - Enter Your WiFi SSID
+pass[] = "";               //   USER PARAMETER - Enter Your WiFi Password
 
 //====================================== USER PARAMETERS ==========================================//
 // The parameters below are the default parameters used when the MPPT charger settings have not    //
@@ -129,27 +160,27 @@ enableBluetooth         = 1,           //   USER PARAMETER - Enable Bluetooth Co
 enableLCD               = 1,           //   USER PARAMETER - Enable LCD display
 enableLCDBacklight      = 1,           //   USER PARAMETER - Enable LCD display's backlight
 overrideFan             = 0,           //   USER PARAMETER - Fan always on
-enableDynamicCooling    = 0;           //   USER PARAMETER - Enable for PWM cooling control 
+enableDynamicCooling    = 1;           //   USER PARAMETER - Enable for PWM cooling control 
 int
-serialTelemMode         = 1,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
+serialTelemMode         = 0,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
 pwmResolution           = 11,          //  USER PARAMETER - PWM Bit Resolution 
 pwmFrequency            = 39000,       //  USER PARAMETER - PWM Switching Frequency - Hz (For Buck)
 temperatureFan          = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
 temperatureMax          = 90,          //  USER PARAMETER - Overtemperature, System Shudown When Exceeded (deg C)
 telemCounterReset       = 0,           //  USER PARAMETER - Reset Telem Data Every (0 = Never, 1 = Day, 2 = Week, 3 = Month, 4 = Year) 
 errorTimeLimit          = 1000,        //  USER PARAMETER - Time interval for reseting error counter (milliseconds)  
-errorCountLimit         = 5,           //  USER PARAMETER - Maximum number of errors  
+errorCountLimit         = 10,           //  USER PARAMETER - Maximum number of errors  
 millisRoutineInterval   = 250,         //  USER PARAMETER - Time Interval Refresh Rate For Routine Functions (ms)
 millisSerialInterval    = 1,           //  USER PARAMETER - Time Interval Refresh Rate For USB Serial Datafeed (ms)
 millisLCDInterval       = 1000,        //  USER PARAMETER - Time Interval Refresh Rate For LCD Display (ms)
-millisWiFiInterval      = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
-millisLCDBackLInterval  = 2000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
+millisWiFiInterval      = 1000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
+millisLCDBackLInterval  = 1000,        //  USER PARAMETER - Time Interval Refresh Rate For WiFi Telemetry (ms)
 backlightSleepMode      = 0,           //  USER PARAMETER - 0 = Never, 1 = 10secs, 2 = 5mins, 3 = 1hr, 4 = 6 hrs, 5 = 12hrs, 6 = 1 day, 7 = 3 days, 8 = 1wk, 9 = 1month
 baudRate                = 500000;      //  USER PARAMETER - USB Serial Baud Rate (bps)
 
 float 
 voltageBatteryMax       = 27.3000,     //   USER PARAMETER - Maximum Battery Charging Voltage (Output V)
-voltageBatteryMin       = 22.4000,     //   USER PARAMETER - Minimum Battery Charging Voltage (Output V)
+voltageBatteryMin       = 0.0000,     //   USER PARAMETER - Minimum Battery Charging Voltage (Output V)
 currentCharging         = 30.0000,     //   USER PARAMETER - Maximum Charging Current (A - Output)
 electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical price per kWh (Dollar/kWh,Euro/kWh,Peso/kWh)
 
@@ -160,15 +191,15 @@ electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical pr
 // MPPT charge controllers designed by TechBuilder (Angelo S. Casimiro)                            //
 //=================================================================================================//
 bool
-ADS1015_Mode            = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
+ADS1015_Mode            = 0;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
 int
 ADC_GainSelect          = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
 avgCountVS              = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
 avgCountCS              = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
-avgCountTS              = 500;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
+avgCountTS              = 10;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
 float
 inVoltageDivRatio       = 40.2156,    //  CALIB PARAMETER - Input voltage divider sensor ratio (change this value to calibrate voltage sensor)
-outVoltageDivRatio      = 24.5000,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
+outVoltageDivRatio      = 24.4200,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
 vOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
 cOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
 ntcResistance           = 10000.00,   //  CALIB PARAMETER - NTC temp sensor's resistance. Change to 10000.00 if you are using a 10k NTC
@@ -292,14 +323,53 @@ secondsElapsed        = 0;           //SYSTEM PARAMETER -
 // unused ESP32 core through Arduino. Yes it does multicore processes simultaneously!              // 
 //=================================================================================================//
 
+
+
 //================= CORE0: SETUP (DUAL CORE MODE) =====================//
 void coreTwo(void * pvParameters){
+  
  setupWiFi();                                              //TAB#7 - WiFi Initialization
+
+  server.on("/", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", loginIndex);
+  });
+  server.on("/serverIndex", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", serverIndex);
+  });
+  /*handling uploading firmware file */
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      /* flashing firmware to ESP*/
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    }
+  });
+  server.begin();
 //================= CORE0: LOOP (DUAL CORE MODE) ======================//
   while(1){
     Wireless_Telemetry();                                   //TAB#7 - Wireless telemetry (WiFi & Bluetooth)
     
 }}
+
 //================== CORE1: SETUP (DUAL CORE MODE) ====================//
 void setup() { 
   
@@ -355,9 +425,151 @@ void setup() {
     lcd.clear();
   }
 
+      client.setServer(MY_MQTT_SERVER_HOST, MY_MQTT_SERVER_PORT);
+      client.setCallback(callback);
+      client.subscribe(MY_MQTT_TOPIC"/voltageBatteryMax1");
+      client.subscribe(MY_MQTT_TOPIC"/MPPT_Mode1");
+      client.subscribe(MY_MQTT_TOPIC"/output_Mode1");
+      client.subscribe(MY_MQTT_TOPIC"/voltageBatteryMin1");
+      client.subscribe(MY_MQTT_TOPIC"/currentCharging1");
+      client.subscribe(MY_MQTT_TOPIC"/enableFan1");
+      client.subscribe(MY_MQTT_TOPIC"/temperatureFan1");
+      client.subscribe(MY_MQTT_TOPIC"/temperatureMax1");
+      client.subscribe(MY_MQTT_TOPIC"/enableWiFi1");
+      client.subscribe(MY_MQTT_TOPIC"/backlightSleepMode1");
   //SETUP FINISHED
   Serial.println("> MPPT HAS INITIALIZED");                //Startup message
 
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+char buffer[128];
+memcpy(buffer, payload, length);
+buffer[length] = '\0';
+char *end = nullptr;
+long value = strtol(buffer, &end, 10);
+
+// Check for conversion errors
+if (end == buffer || errno == ERANGE)
+  ; // Conversion error occurred
+else
+  Serial.println(value);
+
+      if (String(topic) == MY_MQTT_TOPIC"/voltageBatteryMax1")
+      {
+    conv1 = value/100;      
+    conv2 = value%100;                   
+    EEPROM.write(1,conv1);
+    EEPROM.write(2,conv2);
+    EEPROM.commit();
+    delay(5000);
+    ESP.restart();
+}
+    if (String(topic) == MY_MQTT_TOPIC"/voltageBatteryMin1")
+    {
+    conv1 = value/100;       
+    conv2 = value%100;                   
+    EEPROM.write(3,conv1);
+    EEPROM.write(4,conv2);
+    EEPROM.commit();
+    delay(5000);
+    ESP.restart();
+  }
+if (String(topic) == MY_MQTT_TOPIC"/MPPT_Mode1")
+    {
+    conv1 = value;
+    EEPROM.write(0,conv1);  
+    EEPROM.commit();
+    delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/output_Mode1")
+    {
+    conv1 = value;       
+    EEPROM.write(12,conv1); 
+    EEPROM.commit();
+    delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/currentCharging1")
+    {
+    conv1 = value/100;       
+    conv2 = value%100;                 
+    EEPROM.write(5,conv1);
+    EEPROM.write(6,conv2);
+    EEPROM.commit();
+        delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/enableFan1")
+    {
+    conv1 = value;       
+    EEPROM.write(7,conv1);
+    EEPROM.commit();
+        delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/temperatureFan1")
+    {
+    conv1 = value;       
+    EEPROM.write(8,conv1);
+    EEPROM.commit();
+        delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/temperatureMax1")
+    {
+    conv1 = value;       
+    EEPROM.write(9,conv1);
+    EEPROM.commit();
+        delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/enableWiFi1")
+    {
+    conv1 = value;       
+    EEPROM.write(10,conv1);
+    EEPROM.commit();
+        delay(5000);
+    ESP.restart();
+  }
+  if (String(topic) == MY_MQTT_TOPIC"/backlightSleepMode1")
+    {
+    conv1 = value;       
+    EEPROM.write(13,conv1);
+    EEPROM.commit(); 
+        delay(5000);
+    ESP.restart();   
+  }
+
+}
+
+void reconnect() 
+{
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    // Attempt to connect
+    if (client.connect("ESP32Client")) {
+     // Serial.println("connected");
+      // Subscribe
+      client.subscribe(MY_MQTT_TOPIC"/voltageBatteryMax1");
+      client.subscribe(MY_MQTT_TOPIC"/MPPT_Mode1");
+      client.subscribe(MY_MQTT_TOPIC"/output_Mode1");
+      client.subscribe(MY_MQTT_TOPIC"/voltageBatteryMin1");
+      client.subscribe(MY_MQTT_TOPIC"/currentCharging1");
+      client.subscribe(MY_MQTT_TOPIC"/enableFan1");
+      client.subscribe(MY_MQTT_TOPIC"/temperatureFan1");
+      client.subscribe(MY_MQTT_TOPIC"/temperatureMax1");
+      client.subscribe(MY_MQTT_TOPIC"/enableWiFi1");
+      client.subscribe(MY_MQTT_TOPIC"/backlightSleepMode1");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
 }
 //================== CORE1: LOOP (DUAL CORE MODE) ======================//
 void loop() {
@@ -367,4 +579,189 @@ void loop() {
   Charging_Algorithm();   //TAB#5 - Battery Charging Algorithm                    
   Onboard_Telemetry();    //TAB#6 - Onboard telemetry (USB & Serial Telemetry)
   LCD_Menu();             //TAB#8 - Low Power Algorithm
+  server.handleClient();
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+ long now = millis();
+  if (now - lastMsg > 5000) {
+    lastMsg = now;
+    
+  char msg1[10];
+  char msg2[10];
+  char msg3[10];   
+  char msg4[10];
+  char msg5[10];
+  char msg6[10];
+  char msg7[10];
+  char msg8[10];
+  char msg9[10];
+  char msg10[10];
+  char msg11[10];
+  char msg12[10];
+  char msg13[10];
+  char msg14[10];
+  char msg15[10];
+  char msg16[10];
+  char msg17[10];
+  char msg18[10];
+  char msg19[10];
+  char msg20[10];
+  char msg21[10];
+  char msg22[10];
+  char msg23[10];
+  char msg24[10];
+  char msg25[10];
+  char msg26[10];
+  char msg27[10];
+  char msg28[10];
+  char msg29[10];
+  char msg30[10];
+  char msg31[10];
+  char msg32[10];
+  char msg33[10];
+  char msg34[10];
+  char msg35[10];
+  char msg36[10];
+  char msg37[10];
+  char msg38[10];
+  char msg39[10];
+  char msg40[10];
+  char msg41[10];
+  char msg42[10];
+  char msg43[10];
+  char msg44[10];
+
+  dtostrf(voltageInput,7, 3, msg1);
+  client.publish(MY_MQTT_TOPIC"/voltagein", msg1);
+  
+  dtostrf(temperature,7, 3, msg2);
+  client.publish(MY_MQTT_TOPIC"/temperature", msg2);
+  
+  dtostrf(voltageBatteryMax,7, 3, msg3);
+  client.publish(MY_MQTT_TOPIC"/voltageBatteryMax", msg3);
+  
+  dtostrf(powerInput,7, 3, msg4);
+  client.publish(MY_MQTT_TOPIC"/powerInput", msg4);
+  
+  dtostrf(batteryPercent,7, 3, msg5);
+  client.publish(MY_MQTT_TOPIC"/batteryPercent", msg5);
+  
+  dtostrf(currentInput,7, 3, msg6);
+  client.publish(MY_MQTT_TOPIC"/currentInput", msg6);
+  
+  dtostrf(voltageOutput,7, 3, msg7);
+  client.publish(MY_MQTT_TOPIC"/voltageOutput", msg7);
+  
+  dtostrf(currentOutput,7, 3, msg8);
+  client.publish(MY_MQTT_TOPIC"/currentOutput", msg8);
+  
+  dtostrf(Wh/1000,7, 3, msg9);
+  client.publish(MY_MQTT_TOPIC"/Wh", msg9);
+
+  dtostrf(energySavings,7, 3, msg10);
+  client.publish(MY_MQTT_TOPIC"/energySavings", msg10);
+  
+  dtostrf(voltageBatteryMin,7, 3, msg11);
+  client.publish(MY_MQTT_TOPIC"/voltageBatteryMin", msg11);
+  
+  dtostrf(currentCharging,7, 3, msg12);
+  client.publish(MY_MQTT_TOPIC"/currentCharging", msg12);
+  
+  dtostrf(ESP.getHeapSize()/1024,7, 0, msg13);
+  client.publish(MY_MQTT_TOPIC"/ESP.getHeapSize", msg13);
+  
+  dtostrf(ESP.getFlashChipMode(),7, 0, msg14);
+  client.publish(MY_MQTT_TOPIC"/ESP.getFlashChipMode", msg14);
+  
+  dtostrf(ESP.getCpuFreqMHz() ,7, 0, msg15);
+  client.publish(MY_MQTT_TOPIC"/ESP.getCpuFreqMHz", msg15);
+  
+  dtostrf(ESP.getChipRevision(),7, 0, msg16);
+  client.publish(MY_MQTT_TOPIC"/ESP.getChipRevision", msg16);
+  
+  dtostrf(ESP.getFlashChipSize()/1024,7, 0, msg17);
+  client.publish(MY_MQTT_TOPIC"/ESP.getFlashChipSize", msg17);
+  
+  dtostrf(ESP.getFlashChipSpeed()/1000000,7, 0, msg18);
+  client.publish(MY_MQTT_TOPIC"/ESP.getFlashChipSpeed", msg18);
+  
+  dtostrf(ESP.getFreeHeap()/1024,7, 0, msg19);
+  client.publish(MY_MQTT_TOPIC"/ESP.getFreeHeap", msg19);
+
+  dtostrf(ESP.getFreePsram()/1024,7, 0, msg20);
+  client.publish(MY_MQTT_TOPIC"/ESP.getFreePsram", msg20);
+  
+  dtostrf(ESP.getPsramSize()/1024,7, 0, msg21);
+  client.publish(MY_MQTT_TOPIC"/ESP.getPsramSize", msg21);
+  
+  dtostrf(ESP.getMinFreeHeap()/1024,7, 0, msg22);
+  client.publish(MY_MQTT_TOPIC"/ESP.getMinFreeHeap", msg22);
+  
+  client.publish(MY_MQTT_TOPIC"/ESP.getSdkVersion", ESP.getSdkVersion());
+  
+  dtostrf(ESP.getSketchSize()/1024,7, 0, msg24);
+  client.publish(MY_MQTT_TOPIC"/ESP.getSketchSize", msg24);
+  
+  dtostrf(ERR,7, 0, msg25);
+  client.publish(MY_MQTT_TOPIC"/ERR", msg25);
+  
+  dtostrf(FLV,7, 0, msg26);
+  client.publish(MY_MQTT_TOPIC"/FLV", msg26);
+  
+  dtostrf(BNC,7, 0, msg27);
+  client.publish(MY_MQTT_TOPIC"/BNC", msg27);
+  
+  dtostrf(IUV,7, 0, msg28);
+  client.publish(MY_MQTT_TOPIC"/IUV", msg28);
+  
+  dtostrf(IOC,7, 0, msg29);
+  client.publish(MY_MQTT_TOPIC"/IOC", msg29);
+  
+  dtostrf(OOV,7, 0, msg30);
+  client.publish(MY_MQTT_TOPIC"/OOV", msg30);
+  
+  dtostrf(OOC,7, 0, msg31);
+  client.publish(MY_MQTT_TOPIC"/OOC", msg31);
+  
+  dtostrf(OTE,7, 0, msg32);
+  client.publish(MY_MQTT_TOPIC"/OTE", msg32);
+  
+  dtostrf(REC,7, 0, msg33);
+  client.publish(MY_MQTT_TOPIC"/REC", msg33);
+  
+  dtostrf(MPPT_Mode,7, 0, msg34);
+  client.publish(MY_MQTT_TOPIC"/MPPT_Mode", msg34);
+  
+  dtostrf(output_Mode,7, 0, msg35);
+  client.publish(MY_MQTT_TOPIC"/output_Mode", msg35);
+  
+  dtostrf(bypassEnable,7, 0, msg36);
+  client.publish(MY_MQTT_TOPIC"/bypassEnable", msg36);
+  
+  dtostrf(buckEnable,7, 0, msg37);
+  client.publish(MY_MQTT_TOPIC"/buckEnable", msg37);
+  
+  dtostrf(fanStatus,7, 0, msg38);
+  client.publish(MY_MQTT_TOPIC"/fanStatus", msg38);
+  
+  dtostrf(WIFI,7, 0, msg39);
+  client.publish(MY_MQTT_TOPIC"/WIFI", msg39);
+  
+  dtostrf(PWM,7, 0, msg40);
+  client.publish(MY_MQTT_TOPIC"/PWM", msg40);
+  
+  dtostrf(PPWM,7, 0, msg41);
+  client.publish(MY_MQTT_TOPIC"/PPWM", msg41);
+  
+  dtostrf(currentMidPoint,7, 0, msg42);
+  client.publish(MY_MQTT_TOPIC"/currentMidPoint", msg42);
+  
+  dtostrf(CSI_converted,7, 0, msg43);
+  client.publish(MY_MQTT_TOPIC"/CSI_converted", msg43);
+  
+  dtostrf(outputDeviation,7, 0, msg44);
+  client.publish(MY_MQTT_TOPIC"/outputDeviation", msg44);
+  }
 }

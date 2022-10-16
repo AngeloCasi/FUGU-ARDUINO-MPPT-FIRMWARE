@@ -1,6 +1,6 @@
 void setupWiFi(){
   if(enableWiFi==1){
-    Blynk.begin(auth,ssid,pass);
+    Blynk.begin(auth, ssid, pass, "192.168.2.137", 8080);
     WIFI = 1;
   }
 }
